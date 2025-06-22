@@ -22,4 +22,5 @@ export const useUserStore = defineStore("user", {
       return this.favoriteUsers.some((u) => u.id === userId);
     },
   },
+  persist: true,
 });

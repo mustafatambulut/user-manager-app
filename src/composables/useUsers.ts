@@ -13,12 +13,23 @@ export interface User {
 
 export function useUsers() {
   const users = ref<User[]>([]);
-  const loading = ref(true);
+  const loading = ref(false);
+  const page = ref(1); // Page number
+  const resultsPerPage = 20; // Number of users to fetch each time
+  const hasMore = ref(true); // Are there more users?
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (reset = false) => {
+    if (loading.value) return;
     loading.value = true;
     try {
-      const res = await fetch("https://randomuser.me/api/?results=20");
+      if (reset) {
+        page.value = 1;
+        users.value = [];
+        hasMore.value = true;
+      }
+      const res = await fetch(
+        `https://randomuser.me/api/?results=${resultsPerPage}&page=${page.value}`
+      );
       const data = await res.json();
 
       type ApiUser = {
@@ -31,7 +42,7 @@ export function useUsers() {
         picture: { medium: string };
       };
 
-      users.value = data.results.map((u: ApiUser) => ({
+      const newUsers = data.results.map((u: ApiUser) => ({
         id: u.login.uuid,
         name: `${u.name.first} ${u.name.last}`,
         age: u.dob.age,
@@ -41,6 +52,18 @@ export function useUsers() {
         country: u.location.country,
         picture: u.picture.medium,
       }));
+
+      if (reset) {
+        users.value = newUsers;
+      } else {
+        users.value = [...users.value, ...newUsers];
+      }
+      // If the number of returned users is low, there is no more data
+      if (newUsers.length < resultsPerPage) {
+        hasMore.value = false;
+      } else {
+        page.value += 1;
+      }
     } catch (err) {
       console.error("Error fetching users:", err);
     } finally {
@@ -48,11 +71,20 @@ export function useUsers() {
     }
   };
 
-  onMounted(fetchUsers);
+  // Function to be called at the end of scroll
+  const loadMoreUsers = async () => {
+    if (!loading.value && hasMore.value) {
+      await fetchUsers();
+    }
+  };
+
+  onMounted(() => fetchUsers(true));
 
   return {
     users,
     loading,
     fetchUsers,
+    loadMoreUsers,
+    hasMore,
   };
 }

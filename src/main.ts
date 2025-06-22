@@ -1,14 +1,20 @@
-import './assets/main.css'
+import "./assets/main.css";
 
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
+import { createApp } from "vue";
+import { createPinia } from "pinia";
 
-import App from './App.vue'
-import router from './router'
+import App from "./App.vue";
+import router from "./router";
 
-const app = createApp(App)
+// Prevents the state from being lost when the page refreshes and ensures that it is written to local storage.
+import piniaPluginPersistedstate from "pinia-plugin-persistedstate";
 
-app.use(createPinia())
-app.use(router)
+const app = createApp(App);
+const pinia = createPinia();
 
-app.mount('#app')
+pinia.use(piniaPluginPersistedstate);
+
+app.use(pinia);
+app.use(router);
+
+app.mount("#app");
